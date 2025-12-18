@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "vitest",
+    "build": "tsc",
     "start:api": "ts-node src/controller/RestServer.ts",
     "start:worker": "ts-node src/queue/OrderWorker.ts",
     "start:broadcast": "ts-node src/queue/BroadcastServer.ts",
