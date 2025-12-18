@@ -1,21 +1,34 @@
-// src/index.ts
 import Fastify from 'fastify';
+import websocket from '@fastify/websocket';
 import { OrderController } from './OrderExEngineController';
 
+// Use environment variables provided by Docker Compose with defaults
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const HOST = process.env.HOST || '0.0.0.0'; 
+
 const app = Fastify({
-  logger: true, // logs requests to console
+  logger: true,
 });
 
-// Register your controller
-OrderController(app);
-
-// Start server
 const start = async () => {
   try {
-    await app.listen({ port: 3000, host: '0.0.0.0' });
-    console.log('🚀 Server running at http://localhost:3000');
+    // 1. Register WebSocket plugin
+    await app.register(websocket);
+    console.log('✅ WebSocket plugin registered');
+
+    // 2. Register Controller
+    await app.register(OrderController);
+    
+    // 3. Explicitly pass port and host as an object
+    // Fastify requires '0.0.0.0' to accept external Docker/EC2 traffic
+    const address = await app.listen({ 
+      port: PORT, 
+      host: HOST 
+    });
+
+    console.log(`🚀 Engine API is live at ${address}`);
   } catch (err) {
-    app.log.error(err);
+    app.log.error(err, 'Failed to start API server:');
     process.exit(1);
   }
 };

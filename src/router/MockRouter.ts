@@ -1,103 +1,103 @@
 import { randomUUID } from 'crypto';
 
-// --- Domain Models ---
-
 export interface SwapQuote {
   exchange: 'RAYDIUM' | 'METEORA';
-  rate: number;         // Clearer than 'price' for swaps
-  providerFee: number;  // More descriptive than 'fee'
+  poolId: string;
+  inputAmount: number;
+  expectedOutput: number;
+  rate: number;         // Effective rate for this specific amount
+  priceImpact: number;  // % difference from market price
+  providerFee: number;
 }
 
 export interface SwapResult {
-  signature: string;    // Industry standard for Solana/Web3
-  finalRate: number;    // The price actually achieved
+  signature: string;
+  finalRate: number;
+  receivedAmount: number;
 }
 
-export interface LimitOrder {
-  id: string;
-  sourceToken: string;  // Human-friendly 'tokenIn'
-  targetToken: string;  // Human-friendly 'tokenOut'
-  quantity: number;     // Human-friendly 'amount'
-  platform: 'RAYDIUM' | 'METEORA';
-}
-
-// --- Mocking Helpers ---
+// Simulated Pool Depth (in tokens)
+// Shallow pools = High Price Impact | Deep pools = Low Price Impact
+const POOL_RESERVES: Record<string, { sol: number; usdc: number }> = {
+  'RAYDIUM_SOL_USDC': { sol: 10000, usdc: 1000000 }, // $1M Depth
+  'METEORA_SOL_USDC': { sol: 5000, usdc: 500000 },   // $500k Depth (Shallower)
+};
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Using a more natural naming convention for mapping pairs to market values
-const MARKET_BENCHMARKS: Record<string, number> = {
-  'SOL-USDC': 100,
-};
-
-const getMarketPrice = (from: string, to: string) => 
-  MARKET_BENCHMARKS[`${from}-${to}`] ?? 1;
-
-// --- Service Layer ---
-
 export class DexSimulator {
   
-  async fetchRaydiumQuote(from: string, to: string, amount: number): Promise<SwapQuote> {
-    await delay(200);
-    const midPoint = getMarketPrice(from, to);
-    // Simulate minor market spread (98% to 102% of benchmark)
-    const variation = 0.98 + Math.random() * 0.04;
+  private calculateAmmQuote(amountIn: number, reserveIn: number, reserveOut: number) {
+    // Constant Product Formula: (x + deltaX) * (y - deltaY) = x * y
+    // deltaY = (deltaX * y) / (x + deltaX)
+    const fee = amountIn * 0.003; // 0.3% LP fee
+    const amountInWithFee = amountIn - fee;
+    const outputAmount = (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
     
-    return { 
-      exchange: 'RAYDIUM', 
-      rate: midPoint * variation, 
-      providerFee: 0.003 
-    };
+    const marketPrice = reserveOut / reserveIn;
+    const executionPrice = outputAmount / amountIn;
+    const priceImpact = ((marketPrice - executionPrice) / marketPrice) * 100;
+
+    return { outputAmount, executionPrice, priceImpact, fee };
   }
 
-  async fetchMeteoraQuote(from: string, to: string, amount: number): Promise<SwapQuote> {
+  async getQuote(
+    venue: 'RAYDIUM' | 'METEORA', 
+    from: string, 
+    to: string, 
+    amount: number
+  ): Promise<SwapQuote> {
     await delay(200);
-    const midPoint = getMarketPrice(from, to);
-    // Slightly wider spread for Meteora in this simulation
-    const variation = 0.97 + Math.random() * 0.05;
+    const poolKey = `${venue}_${from}_${to}`;
+    const pool = POOL_RESERVES[poolKey] || { sol: 1000, usdc: 100000 };
     
-    return { 
-      exchange: 'METEORA', 
-      rate: midPoint * variation, 
-      providerFee: 0.002 
-    };
-  }
+    // Logic for USDC -> SOL or SOL -> USDC
+    const isBuyingSol = from === 'USDC';
+    const reserveIn = isBuyingSol ? pool.usdc : pool.sol;
+    const reserveOut = isBuyingSol ? pool.sol : pool.usdc;
 
-  async processTrade(
-    venue: 'RAYDIUM' | 'METEORA',
-    tradeParams: {
-      from: string;
-      to: string;
-      inputAmount: number;
-      quotedRate: number;
-    }
-  ): Promise<SwapResult> {
-    // Mimic the real-world latency of a blockchain transaction
-    const networkLatency = 2000 + Math.random() * 1000;
-    await delay(networkLatency);
-
-    // 🎲 Reality check: Web3 transactions fail often
-    const FAILURE_CHANCE = 0.15;
-
-    if (Math.random() < FAILURE_CHANCE) {
-      const errorLog = [
-        'Network RPC timeout',
-        'Expired blockhash',
-        'Slippage protection triggered',
-        'Price moved too fast (stale pool)',
-        'Transaction pre-flight simulation failed',
-      ];
-
-      const specificError = errorLog[Math.floor(Math.random() * errorLog.length)];
-      throw new Error(`[${venue} Engine] Trade Failed: ${specificError}`);
-    }
-
-    // Successful trade usually has a tiny bit of slippage from the quote
-    const actualExecutionRate = tradeParams.quotedRate * (0.995 + Math.random() * 0.01);
+    const { outputAmount, executionPrice, priceImpact, fee } = 
+        this.calculateAmmQuote(amount, reserveIn, reserveOut);
 
     return {
-      signature: `sig_${venue.toLowerCase()}_${randomUUID().split('-')[0]}`,
-      finalRate: actualExecutionRate,
+      exchange: venue,
+      poolId: `pool_${venue.toLowerCase()}_${randomUUID().split('-')[0]}`,
+      inputAmount: amount,
+      expectedOutput: outputAmount,
+      rate: executionPrice,
+      priceImpact: priceImpact,
+      providerFee: fee
     };
   }
+
+ async processTrade(
+  venue: 'RAYDIUM' | 'METEORA',
+  tradeParams: { 
+    amount: number; 
+    quotedRate: number; 
+    slippageBps: number; // e.g., 50 for 0.5%
+  }
+): Promise<SwapResult> {
+  await delay(1500); // Simulate blockchain latency
+
+  // 1. Simulate the "True" price at the moment of execution
+  // We'll make it fluctuate by -1% to +1%
+  const marketShift = 0.99 + Math.random() * 0.02; 
+  const actualRate = tradeParams.quotedRate * marketShift;
+
+  // 2. Calculate the slippage that occurred
+  const slippageOccurred = ((tradeParams.quotedRate - actualRate) / tradeParams.quotedRate) * 10000;
+
+  // 3. LOGIC GATE: If slippage is worse than allowed, FAIL
+  if (slippageOccurred > tradeParams.slippageBps) {
+    console.error(`[${venue}] Slippage error: Expected < ${tradeParams.slippageBps}bps, got ${slippageOccurred.toFixed(0)}bps`);
+    throw new Error('Slippage tolerance exceeded');
+  }
+
+  return {
+    signature: `sig_${randomUUID().split('-')[0]}`,
+    finalRate: actualRate,
+    receivedAmount: tradeParams.amount * actualRate
+  };
+}
 }
