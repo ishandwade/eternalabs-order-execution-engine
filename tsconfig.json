@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",                  // modern JS target
+    "module": "CommonJS",                // simpler than NodeNext
+    "moduleResolution": "Node",          // standard Node resolution
+    "strict": true,                       // type safety
+    "esModuleInterop": true,             // allows import x from 'x'
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "dist"                      // compiled JS output
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
+}
