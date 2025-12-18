@@ -5,8 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
 import { orderQueue } from '../queue/OrderQueue';
-import { DataValidator } from '../utils/DataValidator';
-import { validateTradeRoute } from '../utils/TradeValidator';
+import { DataValidator } from '../validations/DataValidation';
+import { validateTradeRoute } from '../validations/TradeValidator';
 
 // Shared Connections
 const redis = new Redis({
