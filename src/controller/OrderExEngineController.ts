@@ -84,6 +84,15 @@ export async function OrderController(app: FastifyInstance) {
       });
       await redis.expire(`order:${orderId}`, 3600);
 
+      await redis.publish('orders:all', JSON.stringify({
+        event: 'ORDER_QUEUED',
+        orderId,
+        tokenIn,
+        tokenOut,
+        exchange: route.exchange_name,
+        timeQueuedAt
+      }));
+
       // Queue for Background Execution
       await orderQueue.add('order-execution', { 
         orderId, 
@@ -131,4 +140,27 @@ export async function OrderController(app: FastifyInstance) {
       }
     });
   });
+
+  // WebSocket: Global real-time firehose
+app.get('/ws/orders/all', { websocket: true }, (socket: WebSocket) => {
+  const sub = redis.duplicate();
+  
+  // Subscribe to the global firehose
+  sub.subscribe('orders:all');
+
+  sub.on('message', (channel, message) => {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(message);
+    }
+  });
+
+  // Cleanup on disconnect
+  socket.on('close', () => {
+    sub.unsubscribe('orders:all');
+    sub.quit();
+  });
+
+  // Optional: Send a welcome message
+  socket.send(JSON.stringify({ type: 'system', message: 'Connected to global order firehose' }));
+});
 }
