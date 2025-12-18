@@ -10,7 +10,7 @@ describe('DexSimulator Technical Suite', () => {
 
   describe('Quoting Logic', () => {
     it('should provide a rate within 5% of the market benchmark', async () => {
-      const quote = await simulator.fetchRaydiumQuote('SOL', 'USDC', 1);
+      const quote = await simulator.getQuote('RAYDIUM', 'SOL', 'USDC', 1);
       
       // Market benchmark for SOL-USDC is 100 in our mock
       expect(quote.rate).toBeGreaterThan(95);
@@ -18,7 +18,7 @@ describe('DexSimulator Technical Suite', () => {
     });
 
     it('should return the correct exchange identifier in the quote', async () => {
-      const quote = await simulator.fetchMeteoraQuote('SOL', 'USDC', 1);
+      const quote = await simulator.getQuote('METEORA', 'SOL', 'USDC', 1);
       expect(quote.exchange).toBe('METEORA');
     });
   });
@@ -27,10 +27,9 @@ describe('DexSimulator Technical Suite', () => {
     it('should include a valid transaction signature on success', async () => {
       // We pass a very high rate to ensure it's a "valid" params object
       const result = await simulator.processTrade('RAYDIUM', {
-        from: 'SOL',
-        to: 'USDC',
-        inputAmount: 1,
-        quotedRate: 100
+        amount: 10,
+        quotedRate: 100,
+        slippageBps: 100 
       });
 
       expect(result.signature).toMatch(/^sig_raydium_/);
