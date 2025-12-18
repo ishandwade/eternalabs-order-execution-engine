@@ -28,7 +28,7 @@ const start = async () => {
 
     console.log(`🚀 Engine API is live at ${address}`);
   } catch (err) {
-    app.log.error('Failed to start API server:', err);
+    app.log.error(err, 'Failed to start API server:');
     process.exit(1);
   }
 };
