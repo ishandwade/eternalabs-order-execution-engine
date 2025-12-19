@@ -90,6 +90,51 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "WebSocket - OrderUpdate",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "ws://13.53.197.50/ws/orders/all",
+					"protocol": "ws",
+					"host": [
+						"13",
+						"53",
+						"197",
+						"50"
+					],
+					"path": [
+						"ws",
+						"orders",
+						"all"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebSocket - Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "ws://13.53.197.50/ws/health",
+					"protocol": "ws",
+					"host": [
+						"13",
+						"53",
+						"197",
+						"50"
+					],
+					"path": [
+						"ws",
+						"health"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
