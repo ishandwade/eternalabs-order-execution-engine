@@ -205,6 +205,17 @@ Preventing trades on invalid or inactive token pairs without slowing down execut
 4. EC2 instance pulls the image
 5. `docker-compose up` deploys the application
 
+```
+curl --location 'http://13.53.197.50/api/orders/execute' \
+--header 'Content-Type: application/json' \
+--data '{
+  "tokenIn": "SOL",
+  "tokenOut": "USDC",
+  "amount": 0.5,
+  "userId": "central_test_01",
+  "slippageBps": 50
+}'
+```
 ---
 
 ## Key Learnings
