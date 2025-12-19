@@ -1,0 +1,95 @@
+{
+	"info": {
+		"_postman_id": "40fe14e2-d5ce-4bb2-aac2-d8308e78c55e",
+		"name": "EternaLabsDexEngine",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39965953"
+	},
+	"item": [
+		{
+			"name": "Audit",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://13.53.197.50/api/orders/audit/ff7e8228-1c3f-4640-8cbb-23353f6b6faa",
+					"protocol": "http",
+					"host": [
+						"13",
+						"53",
+						"197",
+						"50"
+					],
+					"path": [
+						"api",
+						"orders",
+						"audit",
+						"ff7e8228-1c3f-4640-8cbb-23353f6b6faa"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Order Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://13.53.197.50/api/orders/status/ff7e8228-1c3f-4640-8cbb-23353f6b6faa",
+					"protocol": "http",
+					"host": [
+						"13",
+						"53",
+						"197",
+						"50"
+					],
+					"path": [
+						"api",
+						"orders",
+						"status",
+						"ff7e8228-1c3f-4640-8cbb-23353f6b6faa"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Order-Execute",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": 0.5,\n  \"userId\": \"central_test_01\",\n  \"slippageBps\": 50\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://13.53.197.50/api/orders/execute",
+					"protocol": "http",
+					"host": [
+						"13",
+						"53",
+						"197",
+						"50"
+					],
+					"path": [
+						"api",
+						"orders",
+						"execute"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
