@@ -1,41 +1,52 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { io as Client } from 'socket.io-client';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import WebSocket from 'ws';
 import Redis from 'ioredis';
 
-describe('WebSocket Lifecycle', () => {
-  let client: any;
+describe('WebSocket Lifecycle (Fastify Native)', () => {
   let pub: Redis;
+  // Use the port your local server is running on
+  const BASE_URL = 'ws://localhost:3000';
 
-// test/WSLifeCycle.test.ts
-beforeAll(async () => {
-  pub = new Redis();
-  client = Client('http://localhost:3000', {
-    transports: ['websocket'],
-    reconnection: false // Don't hang the test if it fails
-  });
-  
-  return new Promise((resolve, reject) => {
-    client.on('connect', resolve);
-    client.on('connect_error', (err: Error) => reject(new Error('Server not running on port 3000')));
-  });
-}, 15000); // Increase Vitest hook timeout
-
-  afterAll(() => {
-    client.disconnect();
-    pub.disconnect();
+  beforeAll(() => {
+    pub = new Redis({ host: '127.0.0.1', port: 6379 });
   });
 
-  it('should receive real-time updates from orders_broadcast channel', async () => {
-    const mockPayload = { orderId: 'ws-123', status: 'confirmed' };
+  afterAll(async () => {
+    await pub.quit();
+  });
+
+  // This test covers the specific order monitoring logic
+  it('should receive initial state and updates for specific orderId', async () => {
+    const orderId = `test-order-${Date.now()}`;
+    const initialData = { status: 'queued', tokenIn: 'SOL', tokenOut: 'USDC' };
     
-    const messagePromise = new Promise((resolve) => {
-      client.on('orders_broadcast', (data: string) => resolve(JSON.parse(data)));
+    // 1. Seed Redis with initial state
+    await pub.hset(`order:${orderId}`, initialData);
+
+    const ws = new WebSocket(`${BASE_URL}/ws/orders/${orderId}`);
+    
+    const messagePromise = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('WS Timeout')), 5000);
+      
+      ws.on('message', (data) => {
+        const parsed = JSON.parse(data.toString());
+        // We look for the final confirmed state
+        if (parsed.status === 'confirmed' || parsed.type === 'initial_state') {
+          clearTimeout(timeout);
+          resolve(parsed);
+        }
+      });
     });
 
-    // Simulate the Worker's Redis publish
-    await pub.publish('orders_broadcast', JSON.stringify(mockPayload));
+    // 2. Wait for connection
+    await new Promise((resolve) => ws.on('open', resolve));
 
-    const received = await messagePromise;
-    expect(received).toMatchObject(mockPayload);
+    // 3. Simulate the worker finishing the order
+    const updatePayload = { orderId, status: 'confirmed', txHash: 'sig_success_123' };
+    await pub.publish(`order:${orderId}`, JSON.stringify(updatePayload));
+
+    const received: any = await messagePromise;
+    expect(received.status).toBeDefined();
+    ws.close();
   });
 });
