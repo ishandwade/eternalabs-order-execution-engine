@@ -86,7 +86,7 @@ An architecture diagram is available here:
 ```mermaid
 flowchart TD
     subgraph AWS_EC2_Instance [AWS EC2 INSTANCE]
-        Port80[Port 80] --> API["/api/orders/execute"]
+        Client[Port 80] --> API["/api/orders/execute"]
         
         API --> Req{isOrderValid}
         
