@@ -85,36 +85,47 @@ An architecture diagram is available here:
 
 ```mermaid
 flowchart TD
-    %% Entry
-    A[Port 80] --> B["/api/orders/execute"]
+    subgraph AWS_EC2_Instance [AWS EC2 INSTANCE]
+        Port80[Port 80] --> API["/api/orders/execute"]
+        
+        API --> Req{isOrderValid}
+        
+        %% Validation Logic
+        Req -- "Check Pool id and token id" --> Postgres[(POSTGRES)]
+        Postgres --> Req
+        Req -- "Invalid (400)" --> API
+        
+        %% Valid Path
+        Req -- Valid --> PubQueue[Publish to Queue]
+        
+        %% Execution Flow
+        PubQueue --> TRS[TRS Worker Start Execution]
+        TRS <--> DEX[Decentralised Exchange]
+        
+        TRS --> ActualPrice{Actual Price}
+        
+        %% Data Feed & Updates
+        ActualPrice --> AuditWorker[Audit Worker]
+        ActualPrice --> Redis[(Redis)]
+        ActualPrice --> WebSocketID[Websocket orders/orderid]
+        
+        %% Workers & External Feeds
+        AuditWorker -- Writing Audit Logs --> Postgres
+        Redis -- Status Updates --> WorkerEnd[Worker End Execution]
+        
+        %% Side Observability
+        WS_Health[Websocket Health]
+        WS_All[Websocket orders/all]
+        
+        %% Price Labels (Representing data flow states)
+        PubQueue -.->|Initial Price| WS_All
+        TRS -.->|Intermediary Price| WS_All
+    end
 
-    %% Validation
-    B -->|Req| C{isOrderValid}
-    C -->|Check pool id and token id| D[(Postgres)]
-    D --> C
-
-    C -->|Invalid (400)| E[Websocket Health]
-    C -->|Valid| F[Publish to Queue]
-
-    %% Queue + Worker
-    F --> G[TRS Worker Start Execution]
-
-    %% DEX Interaction
-    G -->|Initial Price| H[Decentralised Exchange]
-    H -->|Actual Price| G
-    G -->|Intermediary Price| I[Websockets orders/all]
-    G -->|Intermediary Price| J[Websocket orders/orderid]
-
-    %% Status + Redis
-    G --> K[(Redis)]
-    K -->|Status Updates| G
-
-    %% Audit + Completion
-    G -->|Audit Event| L[Audit Worker]
-    L -->|Writing Audit Logs| D
-
-    G --> M[Worker End Execution]
-
+    %% Styling
+    style Redis fill:#f96,stroke:#333,stroke-width:2px
+    style Postgres fill:#fff,stroke:#333,stroke-width:2px
+    style AWS_EC2_Instance fill:#f5f5f5,stroke:#999,stroke-dasharray: 5 5
 ```
 
 
