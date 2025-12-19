@@ -83,6 +83,40 @@ An architecture diagram is available here:
 
 * [https://drive.google.com/file/d/1PRVDmRd-ao8zCJUcGPGfVDVvrj4La_zZ/view](https://drive.google.com/file/d/1PRVDmRd-ao8zCJUcGPGfVDVvrj4La_zZ/view)
 
+```mermaid
+flowchart TD
+    %% Entry
+    A[Port 80] --> B[/api/orders/execute]
+
+    %% Validation
+    B -->|Req| C{isOrderValid}
+    C -->|Check pool id<br/>and token id| D[(Postgres)]
+    D --> C
+
+    C -->|Invalid (400)| E[Websocket Health]
+    C -->|Valid| F[Publish to Queue]
+
+    %% Queue + Worker
+    F --> G[TRS Worker<br/>Start Execution]
+
+    %% DEX Interaction
+    G -->|Initial Price| H[Decentralised Exchange]
+    H -->|Actual Price| G
+    G -->|Intermediary Price| I[Websockets<br/>orders/all]
+    G -->|Intermediary Price| J[Websocket<br/>orders/orderid]
+
+    %% Status + Redis
+    G --> K[(Redis)]
+    K -->|Status Updates| G
+
+    %% Audit + Completion
+    G -->|Audit Event| L[Audit Worker]
+    L -->|Writing Audit Logs| D
+
+    G --> M[Worker End Execution]
+```
+
+
 At a high level:
 
 * API requests enqueue jobs
