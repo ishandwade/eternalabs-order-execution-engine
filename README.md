@@ -16,7 +16,7 @@ Market orders were chosen as the primary order type because they best reflect re
 * Liquidity depth
 * Price movement during routing and execution
 
-This makes them an excellent vehicle for modeling slippage, execution uncertainty, and real-time coordination between distributed systems.
+This makes them an excellent vehicle for modeling slippage, execution uncertainty, and real-time coordination between distributed systems and thats why here were using market orders
 
 ---
 
