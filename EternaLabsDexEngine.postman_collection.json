@@ -89,7 +89,260 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "(-ve) InvalidTokenPattern",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenIn\": \"A*B\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": 0.5,\n  \"userId\": \"central_test_01\",\n  \"slippageBps\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://13.53.197.50/api/orders/execute",
+							"protocol": "http",
+							"host": [
+								"13",
+								"53",
+								"197",
+								"50"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "content-length",
+							"value": "39"
+						},
+						{
+							"key": "Date",
+							"value": "Fri, 19 Dec 2025 04:14:12 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=72"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"error\": \"Invalid token symbol format\"\n}"
+				},
+				{
+					"name": "(-ve ) InvalidAmount",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": \"ABC\",\n  \"userId\": \"central_test_01\",\n  \"slippageBps\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://13.53.197.50/api/orders/execute",
+							"protocol": "http",
+							"host": [
+								"13",
+								"53",
+								"197",
+								"50"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "content-length",
+							"value": "44"
+						},
+						{
+							"key": "Date",
+							"value": "Fri, 19 Dec 2025 04:14:39 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=72"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"error\": \"Amount must be a positive number\"\n}"
+				},
+				{
+					"name": "(-ve) Pool Verification",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenIn\": \"USDC\",\n  \"tokenOut\": \"SOL\",\n  \"amount\": 0.5,\n  \"userId\": \"central_test_01\",\n  \"slippageBps\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://13.53.197.50/api/orders/execute",
+							"protocol": "http",
+							"host": [
+								"13",
+								"53",
+								"197",
+								"50"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "content-length",
+							"value": "54"
+						},
+						{
+							"key": "Date",
+							"value": "Fri, 19 Dec 2025 04:15:10 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=72"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"error\": \"No active pool route found for USDC -> SOL\"\n}"
+				},
+				{
+					"name": "+ve case",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": 0.5,\n  \"userId\": \"central_test_01\",\n  \"slippageBps\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://13.53.197.50/api/orders/execute",
+							"protocol": "http",
+							"host": [
+								"13",
+								"53",
+								"197",
+								"50"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "content-length",
+							"value": "95"
+						},
+						{
+							"key": "Date",
+							"value": "Fri, 19 Dec 2025 04:16:01 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=72"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"orderId\": \"a1d12bd7-38c9-4832-b838-89aabb3ccd43\",\n    \"status\": \"queued\",\n    \"message\": \"Order accepted\"\n}"
+				}
+			]
 		},
 		{
 			"name": "WebSocket - OrderUpdate",
