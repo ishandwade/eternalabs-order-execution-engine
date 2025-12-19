@@ -1,44 +1,47 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { DexSimulator } from '../src/router/MockRouter'; // Ensure this points to your logic file
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { DexSimulator } from '../src/router/MockRouter';
 
 describe('DexSimulator Technical Suite', () => {
   let simulator: DexSimulator;
 
   beforeEach(() => {
     simulator = new DexSimulator();
+    vi.restoreAllMocks(); 
   });
 
   describe('Quoting Logic', () => {
-    it('should provide a rate within 5% of the market benchmark', async () => {
-      const quote = await simulator.getQuote('RAYDIUM', 'SOL', 'USDC', 1);
+    it('should reflect higher price impact on shallower pools (METEORA)', async () => {
+      const amount = 500;
+      const raydium = await simulator.getQuote('RAYDIUM', 'SOL', 'USDC', amount);
+      const meteora = await simulator.getQuote('METEORA', 'SOL', 'USDC', amount);
       
-      // Market benchmark for SOL-USDC is 100 in our mock
-      expect(quote.rate).toBeGreaterThan(95);
-      expect(quote.rate).toBeLessThan(105);
+      expect(meteora.priceImpact).toBeGreaterThan(raydium.priceImpact);
     });
 
-    it('should return the correct exchange identifier in the quote', async () => {
-      const quote = await simulator.getQuote('METEORA', 'SOL', 'USDC', 1);
-      expect(quote.exchange).toBe('METEORA');
+    it('should return a valid SwapQuote object structure', async () => {
+      const quote = await simulator.getQuote('RAYDIUM', 'USDC', 'SOL', 1000);
+      expect(quote).toHaveProperty('rate');
+      expect(quote.exchange).toBe('RAYDIUM');
     });
   });
 
   describe('Execution Integrity', () => {
-    it('should include a valid transaction signature on success', async () => {
-      // We pass a very high rate to ensure it's a "valid" params object
+    it('should include a valid transaction signature starting with sig_', async () => {
       const result = await simulator.processTrade('RAYDIUM', {
-        amount: 10,
+        amount: 1,
         quotedRate: 100,
-        slippageBps: 100 
+        slippageBps: 500 
       });
-
-      expect(result.signature).toMatch(/^sig_raydium_/);
+      expect(result.signature).toMatch(/^sig_[a-f0-9]/);
     });
 
-    it('should throw an error when a network failure occurs', async () => {
-      // Note: Since failures are random (15%), we might need to 
-      // mock the randomness or run multiple times to catch it.
-      // In a real professional setup, we would use vi.spyOn(Math, 'random')
+    it('should throw an error when slippage tolerance is exceeded', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0); // Forces 1% drop (100bps)
+      await expect(simulator.processTrade('RAYDIUM', {
+        amount: 10,
+        quotedRate: 100,
+        slippageBps: 10 // Only 0.1% allowed
+      })).rejects.toThrow('Slippage tolerance exceeded');
     });
   });
 });

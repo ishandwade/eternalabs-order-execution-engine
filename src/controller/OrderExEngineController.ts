@@ -119,6 +119,68 @@ export async function OrderController(app: FastifyInstance) {
     }
   });
 
+  // 1. Polling API: Retrieve current status from Redis Cache
+  app.get('/api/orders/status/:orderId', async (request, reply) => {
+    const { orderId } = request.params as { orderId: string };
+
+    const cachedData = await redis.hgetall(`order:${orderId}`);
+
+    if (!cachedData || Object.keys(cachedData).length === 0) {
+      return reply.status(404).send({ 
+        error: 'Order status not found in cache',
+        suggestion: 'Check the audit API if the order is older than 1 hour' 
+      });
+    }
+
+    return reply.send({
+      orderId,
+      ...cachedData,
+      source: 'cache_redis'
+    });
+  });
+
+  // 2. Audit API: Retrieve full historical trail from PostgreSQL
+  app.get('/api/orders/audit/:orderId', async (request, reply) => {
+    const { orderId } = request.params as { orderId: string };
+
+    try {
+      const query = `
+        SELECT 
+          o.id as order_id,
+          o.user_id,
+          o.current_state,
+          oa.token_in,
+          oa.token_out,
+          oa.amount_in,
+          oa.amount_out,
+          oa.slippage_bps,
+          (
+            SELECT json_agg(events)
+            FROM (
+              SELECT state, details, event_time
+              FROM trading.order_events
+              WHERE order_id = o.id
+              ORDER BY event_time ASC
+            ) events
+          ) as history
+        FROM trading.orders o
+        LEFT JOIN trading.order_assets oa ON o.id = oa.order_id
+        WHERE o.id = $1;
+      `;
+
+      const result = await pgPool.query(query, [orderId]);
+
+      if (result.rows.length === 0) {
+        return reply.status(404).send({ error: 'Order not found in database history' });
+      }
+
+      return reply.send(result.rows[0]);
+    } catch (err) {
+      app.log.error(err);
+      return reply.status(500).send({ error: 'Failed to fetch audit history' });
+    }
+  });
+
   //WebSocket: Real-time status stream
   app.get('/ws/orders/:orderId', { websocket: true }, (socket: WebSocket, req: FastifyRequest) => {
     const { orderId } = req.params as { orderId: string };

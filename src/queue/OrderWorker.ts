@@ -51,7 +51,6 @@ export const orderWorker = new Worker(
         pub.publish(`order:${orderId}`, payload),
         pub.publish('orders_broadcast', payload),
         pub.publish('orders:all', payload)
-
       ]);
       console.log(`[PUB_SUB] Broadcasted ${status} for ${orderId}`);
       console.log('---------------------------------------------------');

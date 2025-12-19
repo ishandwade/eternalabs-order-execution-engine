@@ -14,14 +14,12 @@ export const connection = new IORedis({
 export const orderQueue = new Queue('order-execution', { 
   connection,
   defaultJobOptions: {
-    // Required: Exponential back-off retry (≤3 attempts)
-    attempts: 3,             
+    attempts: 3, // Must be > 1 for backoff to trigger
     backoff: {
       type: 'exponential',
-      delay: 1000, // 1s, 2s, 4s...
+      delay: 1000, 
     },
-    removeOnComplete: true, // Keep Redis clean
-    removeOnFail: false     // Keep failed jobs for "post-mortem analysis" (per agenda)
+    removeOnComplete: true,
   }
 });
 
